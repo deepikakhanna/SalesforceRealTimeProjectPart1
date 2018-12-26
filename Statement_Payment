@@ -1,0 +1,74 @@
+<apex:page standardController="Statement__c" extensions="payments_Extension" sidebar="false" showHeader="false">
+    <apex:sectionheader title="Statement" subtitle="{!Statement__c.name}" rendered="true"/>
+    <apex:pageblock mode="maindetail" title="Statement Details" rendered="true">
+        <apex:pageblocksection columns="1">
+            <apex:outputfield value="{!Statement__c.Statement_Date__c}"/>
+            <apex:outputfield value="{!Statement__c.Balance__c}"/>
+        </apex:pageblocksection>
+    </apex:pageblock>
+    <apex:form >
+        <apex:pageblock title="Quick Payment" mode="edit">
+            <!--pageblockbuttons automatically arrange our buttons-->
+            <!--to look like the standard Salesforce interface-->
+            <apex:pageblockbuttons location="bottom">
+                <!--we only want this button to show at the bottom of our page-->
+                <apex:commandbutton value="Save Payment" action="{!savePayment}" disabled="{!success}"/>
+            </apex:pageblockbuttons>
+            <apex:pagemessages />
+            <apex:pageblocksection id="paymentSection" columns="1">
+                <apex:selectlist label="Payment Method" value="{!thisPayment.recordtypeid}" size="1">
+                    <!--getter method to retrieve our record types for payment__c-->
+                    <apex:selectOptions value="{!paymentRecordTypes}"/>
+                    <!--actionsupport allows us to call ajax rerenders-->
+                    <!--or controller / extension methods using the-->
+                    <!--action attribute on events-->
+                    <apex:actionsupport event="onchange" rerender="paymentMethodDetails"/>
+                </apex:selectlist>
+
+                <!--amount defaulted to statement amount in extension-->
+                <!--editable if not guest-->
+                <apex:inputfield value="{!thisPayment.Amount__c}" rendered="true"/>
+                <!--if guest, not editable-->
+                <!--<apex:outputfield value="{!thisPayment.Amount__c}" rendered="{!isGuest}"/> -->
+
+                <!--generic billing information-->
+                <!--autopopulated in extension if not guest from renter-->
+                <apex:inputfield value="{!thisPayment.Billing_Name__c}"/>
+                <apex:inputfield value="{!thisPayment.Billing_Street__c}"/>
+                <apex:inputfield value="{!thisPayment.Billing_City__c}"/>
+                <apex:inputfield value="{!thisPayment.Billing_State__c}"/>
+                <apex:inputfield value="{!thisPayment.Billing_Postal_Code__c}"/>
+            </apex:pageblocksection>
+            <!--section to contain check/card details-->
+            <!--the id will allow us to ajax rerender this section-->
+            <apex:outputpanel id="paymentMethodDetails">
+                <!--check fields-->
+                <apex:pageblocksection columns="1" rendered="{!thisPayment.recordtypeid != null && recordTypeMap[thisPayment.recordtypeid]=='Check'}">
+                    <apex:inputfield value="{!thisPayment.Check_Account_Number__c}"/>
+                    <apex:inputfield value="{!thisPayment.Check_Routing_Number__c}"/>
+                </apex:pageblocksection>
+                
+                <!--card fields-->
+                <apex:pageblocksection columns="1" rendered="{!thisPayment.recordtypeid != null && recordTypeMap[thisPayment.recordtypeid]=='Credit Card'}">
+                    <apex:inputfield value="{!thisPayment.Credit_Card_Number__c}"/>
+                    <!-- using pageblocksectionitem requires only 2 child-->
+                    <!-- elements of pageblocksectionitem. By nesting -->
+                    <!-- components in an outputpanel, we can get-->
+                    <!-- get around that restriction-->
+                    <apex:pageblocksectionitem >
+                        <apex:outputlabel value="Credit Card Expiration"/>
+                        <apex:outputpanel layout="none">
+                            <apex:inputfield value="{!thisPayment.Credit_Card_Expiration_Month__c}"/>
+                            <apex:selectlist value="{!thisPayment.Expiration_Year__c}" size="1">
+                                <apex:selectoptions value="{!expirationYears}"/>
+                            </apex:selectlist>
+                        </apex:outputpanel>
+                    </apex:pageblocksectionitem>
+                    
+                    <!--inputsecret keeps the value masked during input-->
+                    <apex:inputsecret value="{!thisPayment.Credit_Card_Security_Card__c}"/>
+                </apex:pageblocksection>
+            </apex:outputpanel>
+        </apex:pageblock>
+    </apex:form>
+</apex:page>
